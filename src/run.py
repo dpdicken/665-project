@@ -1,13 +1,21 @@
 import sys
 import os
 import data
+from model import DUWE
+
+data_dir = "../resources/test/"
 
 def main():
-    for filename in os.listdir("../resources/temp/"):
-        tweets = data.read_json_data_file("../resources/temp/" + filename)
-        print(filename)
-        for tweet in tweets:
-            print(tweet['user']['screen_name'])
+    model = DUWE()
+    tweets = {}
+    
+    print("Loading data...", end="")
+    for filename in os.listdir(data_dir):
+        new_user = data.read_json_data_file(data_dir + filename)
+        tweets.update(new_user)
+    print(" Done.")
+
+    model.train(tweets)
 
 if __name__ == "__main__":
     main()
