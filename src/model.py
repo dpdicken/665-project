@@ -12,11 +12,16 @@ class DUWE():
             self.time_delta = timedelta(days=1)
 
         def train(self, data):
+            if __debug__:
+                print("Training DUWE model...")
+
             self.data = data
             self.dm = UserDocumentManager(data)
             users = self.data.keys()
             start_time = self.find_smallest_time()
             end_time = self.find_largest_time()
+
+            print(start_time / self.time_delta)
 
             # Here is will we will set up data and create the embeddings at each time step
             while start_time <= end_time:
@@ -56,26 +61,27 @@ class DUWE():
 class UserDocumentManager():
 
     def __init__(self, data):
-        self.users = list(data.keys())
+        users = list(data.keys())
         self.user_labels = LabelEncoder()
-        self.user_labels.fit(self.users)
+        self.user_labels.fit(users)
 
         words = utils.get_unique_words(data)
 
         self.word_labels = LabelEncoder()
         self.word_labels.fit(list(words))
 
-        print(len(self.users))
-        self.counts = np.zeros((len(words), len(self.users)))
+        self.diffusion_values = defaultdict(lambda: 0)
+        self.counts = np.zeros((len(words), len(users)))
 
     def get_user_distribution(self, user):
         pass
 
     def set_user_distribution(self, user, update):
         # add the passed in values from the map (update) to the correct entries in self.counts
-
-        # Additionally, update the user diffusion value (avg of tweet lengths)
-        pass
+        user_index = self.user_labels.transform([user])[0]
+        for word in update.keys():
+            word_label = self.word_labels.transform([word])[0]
+            self.counts[word_label][user_index] += update[word]
 
     def count_total_word_appearences(self, user):
         # counts of word appearences over whole document set
@@ -86,11 +92,17 @@ class UserDocumentManager():
             actual_word = self.word_labels.inverse_transform([i])[0]
             counts[actual_word] = word[user_index]
             i += 1
-        print("COUNTS: ", counts)
+        # print("COUNTS: ", counts)
         return counts
 
     def get_user_diffusion(self, user):
-        pass
+        return self.diffusion_values[user]
 
-    def set_user_diffusion(self, user, distribution):
-        pass
+    def set_user_diffusion(self, user, documents):
+        # Get the average length of the docs passed in
+        avg_length = len(documents[0]['text'])
+        for tweet in documents:
+            avg_length = (avg_length + len(tweet['text'])) / 2
+
+        # Update users diffusion value
+        self.diffusion_values[user] = (self.diffusion_values[user] + avg_length) / 2

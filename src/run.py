@@ -8,12 +8,16 @@ data_dir = "../resources/test/"
 def main():
     model = DUWE()
     tweets = {}
-    
-    print("Loading data...", end="")
+
+    if __debug__:
+        print("Loading data...", end="")
+
     for filename in os.listdir(data_dir):
         new_user = data.read_json_data_file(data_dir + filename)
         tweets.update(new_user)
-    print(" Done.")
+
+    if __debug__:
+        print(" Done.")
 
     model.train(tweets)
 
